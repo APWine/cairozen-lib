@@ -77,7 +77,7 @@ beforeEach(async () => {
 });
 
 async function deployAccount() {
-    const accountAddress = await cairozen.getStarknetAccountAddress(
+    const accountAddress = cairozen.getStarknetAccountAddress(
         cairozen.viemWalletClient.account.address
     );
     await faucet(accountAddress);
@@ -148,7 +148,7 @@ test.serial(
             counterAddress,
             cairozen.starknetProvider
         );
-        t.assert((await counterContract.get_counter()) === 0);
+        t.assert((await counterContract.get_counter()) === 0n);
         await cairozen.signAndExecute(accountAddress, [
             {
                 to: counterAddress,
@@ -159,6 +159,6 @@ test.serial(
                 }),
             },
         ]);
-        t.assert((await counterContract.get_counter()) === 0);
+        t.assert((await counterContract.get_counter()) === 1n);
     }
 );

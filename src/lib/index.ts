@@ -46,7 +46,7 @@ export default class Cairozen {
         );
     }
 
-    public async getStarknetAccountAddress(ethAddress: string) {
+    public getStarknetAccountAddress(ethAddress: string) {
         const accountCalldata = CallData.compile({
             ethAddress,
         });
