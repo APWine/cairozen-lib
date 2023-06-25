@@ -45,7 +45,7 @@
   "dependencies": {
     "@bitauth/libauth": "^1.17.1",
     "dotenv": "^16.3.1",
-    "starknet": "^4.22.0",
+    "starknet": "^5.14.0",
     "viem": "^1.0.7"
   },
   "devDependencies": {
