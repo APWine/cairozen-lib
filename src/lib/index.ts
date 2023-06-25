@@ -1,18 +1,29 @@
+import { readFileSync } from 'fs';
+
 import {
     Account,
-    ec,
+    CallData,
+    Contract,
     hash,
-    stark,
+    json,
     Provider as StarknetProvider,
 } from 'starknet';
 import { WalletClient as ViemWalletClient } from 'viem';
+
+type Call = {
+    to: string;
+    selector: string;
+    calldata: ReturnType<typeof CallData.compile>;
+};
 
 export default class Cairozen {
     starknetProvider: StarknetProvider;
     viemWalletClient: ViemWalletClient;
 
+    accountContracts: { [accountAddress: string]: Contract } = {};
+
     static readonly ACCOUNT_CONTRACT_HASH =
-        '0x02980af42d60804966b39d1cb376636870bfdb68fa7ca49028917e6845d27d1d';
+        '0x0532084d790fbaf56420366d103428fa0e8b14f6e3a677b6b263583efdb505e8';
 
     constructor(options: {
         starknetProvider: StarknetProvider;
@@ -23,8 +34,20 @@ export default class Cairozen {
         this.viemWalletClient;
     }
 
+    private accountContract(accountAddress: string) {
+        return new Contract(
+            json.parse(
+                readFileSync(
+                    './compiled-contract/contracts_CairozenEOA.sierra.json'
+                ).toString('ascii')
+            ).abi,
+            accountAddress,
+            this.starknetProvider
+        );
+    }
+
     public async getStarknetAccountAddress(ethAddress: string) {
-        const accountCalldata = stark.compileCalldata({
+        const accountCalldata = CallData.compile({
             ethAddress,
         });
         const accountAddress = hash.calculateContractAddressFromHash(
@@ -38,25 +61,30 @@ export default class Cairozen {
 
     public getDeployerAccount() {
         const privateKey0 = '0xe3e70682c2094cac629f6fbed82c07cd';
-        const starkKeyPair0 = ec.getKeyPair(privateKey0);
         const accountAddress0 =
             '0x7e00d496e324876bbc8531f2d9a82bf154d1a04a50218ee74cdd372f75a551a';
-        return new Account(
-            this.starknetProvider,
-            accountAddress0,
-            starkKeyPair0
-        );
+        return new Account(this.starknetProvider, accountAddress0, privateKey0);
     }
 
-    public async deployStarknetAccount(ethAddress?: string) {
+    public async deployStarknetAccount(ethAddress: string) {
         const account = this.getDeployerAccount();
         const { transaction_hash } = await account.deployAccount({
             classHash: Cairozen.ACCOUNT_CONTRACT_HASH,
-            constructorCalldata: stark.compileCalldata({
+            constructorCalldata: CallData.compile({
                 ethAddress,
             }),
             addressSalt: ethAddress.toLowerCase(),
         });
         return this.starknetProvider.waitForTransaction(transaction_hash);
+    }
+
+    public async getAccountEthOwner(accountAddress: string) {
+        // TODO: convert to hex address
+        return await this.accountContract(accountAddress).get_eth_address();
+    }
+
+    public async signAndExecute(accountAddress: string, calls: Call[]) {
+        // TODO: 712 signature
+        return await this.accountContract(accountAddress).__execute__(calls);
     }
 }
