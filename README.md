@@ -1,5 +1,7 @@
 # cairozen
 
+![Cairozen](/logo.png)
+
 Cairozen Library
 
 ## Context
